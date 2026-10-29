@@ -1,0 +1,81 @@
+---
+# Full 40-char commit sha on solana-foundation/grpc-latency-monitor main
+# (override per deploy with GRPC_BENCH_REF). Empty skips the benchmark.
+grpc_bench_ref: "25766a5e1bd5f072a05238e1e267fba011b5d05b"
+grpc_bench_repo: "solana-foundation/grpc-latency-monitor"
+grpc_bench_tarball_url: "https://codeload.github.com/{{ grpc_bench_repo }}/tar.gz/{{ grpc_bench_ref }}"
+grpc_bench_src_dir: "{{ ansible_user_dir }}/grpc-latency-monitor-src"
+grpc_bench_bin: "/usr/local/bin/solana-streaming-benchmark"
+
+grpc_bench_conf: "{{ conf_dir }}/grpc-bench.yaml"
+grpc_bench_env_file: "{{ conf_dir }}/grpc-bench.env"
+grpc_bench_state_dir: "{{ data_dir }}/grpc-bench-state"
+# Keeps a runaway benchmark from starving rpc-monitor on the shared box.
+grpc_bench_memory_max: "4G"
+
+grpc_bench_ch_database: "benchmark"
+
+# Goose runs the benchmark's ClickHouse migrations once per deploy (from one
+# host, over HTTPS) before any subscriber starts.
+grpc_bench_goose_version: "v3.28.0"
+grpc_bench_goose_sha256: "ab073515b78ef345f64f018c0d79aa7db50106806efc686dda7181253765ae13"
+grpc_bench_goose_bin: "/usr/local/bin/goose"
+
+# Trusted HTTP(S) RPC for getSlot plausibility checks (3 requests/s per host).
+# Doppler GRPC_BENCH_REFERENCE_RPC_URL overrides this.
+grpc_bench_reference_rpc_url: "https://api.mainnet.solana.com"
+
+# Each provider needs a URL (`url`, or a bare host in Doppler `url_secret`) and
+# optionally an x-token Doppler key (`token_secret`). A provider whose secrets
+# are missing is skipped with a warning; at least two must resolve.
+# Each provider opens 5 gRPC connections per host.
+grpc_bench_providers:
+  - name: helius
+    url: "{{ 'https://laserstream-mainnet-' ~ grpc_bench_helius_regions[monitor_region] ~ '.helius-rpc.com' if monitor_region in grpc_bench_helius_regions else '' }}"
+    token_secret: HELIUS_API_KEY
+  - name: triton
+    url_secret: TRITON_HOST
+    token_secret: TRITON_TOKEN
+
+# Nearest Helius LaserStream region per monitor_region.
+grpc_bench_helius_regions:
+  nyc: ewr
+  ewr2: ewr
+  pit1: pitt
+  lax: lax
+  lax1: lax
+  lon: lon
+  lon1: lon
+  fra: fra
+  fra2: fra
+  ams: ams
+  ams3: ams
+  tyo: tyo
+  tyo2: tyo
+  sgp: sgp
+  sgp2: sgp
+
+grpc_bench_filters:
+  accounts_owner:
+    - "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA"
+  transactions_account_include:
+    - "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA"
+
+# Datacenter-city coordinates per monitor_region. Override per host with
+# grpc_bench_latitude / grpc_bench_longitude.
+grpc_bench_coordinates:
+  nyc: [40.7128, -74.0060]
+  ewr2: [40.7357, -74.1724]
+  pit1: [40.4406, -79.9959]
+  lax: [34.0522, -118.2437]
+  lax1: [34.0522, -118.2437]
+  lon: [51.5074, -0.1278]
+  lon1: [51.5074, -0.1278]
+  fra: [50.1109, 8.6821]
+  fra2: [50.1109, 8.6821]
+  ams: [52.3676, 4.9041]
+  ams3: [52.3676, 4.9041]
+  tyo: [35.6762, 139.6503]
+  tyo2: [35.6762, 139.6503]
+  sgp: [1.3521, 103.8198]
+  sgp2: [1.3521, 103.8198]
